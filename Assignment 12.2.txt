@@ -1,0 +1,50 @@
+Assignment 12.2
+
+Problem Statement
+1. Perform the below given activities:
+a. Take a sample data set of your choice
+b. Apply random forest, logistic regression using Spark R
+c. Predict for new dataset
+
+#Model Deployment
+install.packages("pmml")
+install.packages("sparklyr")
+library(pmml)
+library(rpart)
+dtree<-rpart(Species~.,data = iris)
+dtree
+pmml(dtree)
+
+#to store the PMML mode in xml form ,form R studio the following script can be used
+saveXML(pmml(dtree),file = "dtree_in_pmm1.xml")
+
+# Spark R integration
+library(sparklyr)
+spark_install()
+sc<-spark_connect(master = "local")
+library(dplyr)
+iris_tbl<-copy_to(sc,iris)
+iris_tbl
+spark_install("1.6.2")
+
+
+#Machine learning using Pache Spark
+#copy mtcars into Spark
+library(dplyr)
+mtcras_tbl<-copy_to(sc,mtcars)
+mtcras_tbl
+
+
+#transform our dataset  and then partition into training set
+
+partitions<-mtcras_tbl %>%
+filter(hp>=100)%>%
+mutate(cy18=cyl==8)%>%  
+sdf_partition(training=0.5,test=0.5,seed = 1099)  
+partitions
+
+#fit a linear model to the training set
+
+fit<-partitions$training  %>%
+m1_linear_regression(response="mpg",features=c("wt","cyl"))
+summary(fit)
